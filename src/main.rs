@@ -1,4 +1,3 @@
-use crate::snmp::SnmpClientV2c;
 use tokio::time::{Duration, timeout};
 
 mod config;
@@ -9,7 +8,8 @@ async fn main() -> anyhow::Result<()> {
     let profile = config::Profile::load("./profiles/generic-endpoint.yaml")?;
     println!("Профиль загружен: {}", profile.name);
 
-    let mut client = SnmpClientV2c::new("127.0.0.1:161", b"public").await?;
+    // TODO: move SNMP настройки в конфигурацию/CLI
+    let mut client = snmp::create_v2c_client("127.0.0.1:161", b"public").await?;
     println!("SNMP сессия создана");
 
     println!("Опрос scalars:");
