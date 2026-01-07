@@ -1,5 +1,5 @@
 use crate::snmp::SnmpClientV2c;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 mod config;
 mod snmp;
