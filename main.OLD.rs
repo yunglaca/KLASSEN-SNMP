@@ -1,5 +1,4 @@
 use tokio::time::{Duration, timeout};
-use snmp2::v3::{AuthProtocol, Cipher};
 
 mod config;
 mod snmp;
@@ -10,15 +9,7 @@ async fn main() -> anyhow::Result<()> {
     println!("Профиль загружен: {}", profile.name);
 
     // TODO: move SNMP настройки в конфигурацию/CLI
-    let mut client = snmp::create_v3_client_auth_priv(
-        "127.0.0.1:161",
-        b"myuser",
-        b"myauthpass",
-        AuthProtocol::Sha1,  
-        Cipher::Aes128,
-        b"myprivpass",
-    ).await?;
-    
+    let mut client = snmp::create_v2c_client("127.0.0.1:161", b"public").await?;
     println!("SNMP сессия создана");
 
     println!("Опрос scalars:");
