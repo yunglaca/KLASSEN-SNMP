@@ -1,36 +1,93 @@
-use tokio::time::{Duration, timeout};
-use snmp2::v3::{AuthProtocol, Cipher};
+use anyhow::Result;
 
+mod collector;
 mod config;
+mod formatter;
 mod snmp;
 
+use collector::SnmpCollector;
+use formatter::JsonFormatter;
+
+// TODO: Добавить конфигурационный файл для самого приложения
+// TODO: Добавить метрики и мониторинг:
+// - Время выполнения операций
+// - Количество успешных/неуспешных запросов
+// - Статистика по типам устройств
+// - Экспорт метрик maybeee
+
+
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let profile = config::Profile::load("./profiles/generic-endpoint.yaml")?;
-    println!("Профиль загружен: {}", profile.name);
+async fn main() -> Result<()> {
+    // Загружаем конфигурацию без лишних сообщений
+    let config = config::AppConfig::load("./profiles/generic-endpoint.yaml")?;
+    let target = config.get_target();
 
-    // TODO: move SNMP настройки в конфигурацию/CLI
-    let mut client = snmp::create_v3_client_auth_priv(
-        "127.0.0.1:161",
-        b"myuser",
-        b"myauthpass",
-        AuthProtocol::Sha1,  
-        Cipher::Aes128,
-        b"myprivpass",
-    ).await?;
-    
-    println!("SNMP сессия создана");
+    // Результаты для JSON вывода
+    let mut results = Vec::new();
 
-    println!("Опрос scalars:");
-    for (name, oid_str) in &profile.scalars {
-        let oid = snmp::parse_oid(oid_str)?;
-
-        let timeout_secs = 3;
-        match timeout(Duration::from_secs(timeout_secs), client.get(&oid)).await {
-            Ok(Ok(value)) => println!("  {} = {:?}", name, value),
-            Ok(Err(e)) => println!("  {} = ERROR: {}", name, e),
-            Err(_) => println!("  {} = TIMEOUT (нет ответа за {timeout_secs} сек)", name),
+    // Пробуем SNMPv3
+    match create_snmpv3_client(&config, &target).await {
+        Ok(client) => match SnmpCollector::collect_all(client, &config, "SNMPv3").await {
+            Ok(result) => {
+                results.push(result);
+            }
+            Err(e) => {
+                eprintln!("SNMPv3 сбор данных не удался: {}", e);
+            }
+        },
+        Err(_) => {
+            eprintln!("SNMPv3 клиент недоступен");
         }
     }
+
+    // Пробуем SNMPv2c (только если SNMPv3 не сработал)
+    if results.is_empty() {
+        match create_snmpv2c_client(&config, &target).await {
+            Ok(client) => match SnmpCollector::collect_all(client, &config, "SNMPv2c").await {
+                Ok(result) => {
+                    results.push(result);
+                }
+                Err(_) => {
+                    eprintln!("SNMPv2c также недоступен");
+                }
+            },
+            Err(_) => {
+                eprintln!("Все SNMP версии недоступны");
+            }
+        }
+    }
+
+    // Выводим результаты в JSON
+    for result in results {
+        match JsonFormatter::to_json_string(&result) {
+            Ok(json) => println!("{}", json),
+            Err(e) => eprintln!("❌ Ошибка JSON сериализации: {}", e),
+        }
+    }
+
     Ok(())
+}
+
+/// Создает SNMPv3 клиент
+async fn create_snmpv3_client(
+    config: &config::AppConfig,
+    target: &str,
+) -> Result<snmp::SnmpClient> {
+    snmp::create_v3_client_auth_priv(
+        target,
+        &config.get_username(),
+        &config.get_auth_password(),
+        config.settings.get_auth_protocol(),
+        config.settings.get_privacy_protocol(),
+        &config.get_privacy_password(),
+    )
+    .await
+}
+
+/// Создает SNMPv2c клиент
+async fn create_snmpv2c_client(
+    config: &config::AppConfig,
+    target: &str,
+) -> Result<snmp::SnmpClient> {
+    snmp::create_v2c_client(target, &config.get_community()).await
 }

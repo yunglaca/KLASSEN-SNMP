@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
     pub name: String, // Название профиля, например "generic-endpoint" или "printer"
     pub scalars: HashMap<String, String>, // Хранит скалярные OID — одиночные значения, которые опрашиваются через SNMP
@@ -22,17 +22,5 @@ impl Profile {
         }
 
         Ok(profile)
-    }
-
-    // TODO Найти имя scalar по OID (для маппинга результатов)
-    pub fn find_scalar_name(&self, oid_str: &str) -> Option<&String> {
-        self.scalars
-            .iter()
-            .find(|(_, v)| v.as_str() == oid_str)
-            .map(|(k, _)| k)
-    }
-
-    pub fn item_count(&self) -> usize {
-        self.scalars.len() + self.tables.len()
     }
 }

@@ -1,20 +1,17 @@
 use anyhow::Result;
 use snmp2::{Oid, Value};
 
+pub mod clients_enum;
+pub mod device_profiles;
 pub mod v2c;
 pub mod v3;
-pub mod oid;
-pub mod clients_enum;
 
 pub use clients_enum::SnmpClient;
+pub use device_profiles::{DeviceDetector, parse_oid, set_global_device_type};
 pub use v2c::SnmpClientV2c;
 pub use v3::SnmpClientV3;
-pub use oid::parse_oid;
-
 
 pub use snmp2::v3::{AuthProtocol, Cipher};
-
-
 
 impl SnmpClient {
     pub async fn get(&mut self, oid: &Oid<'_>) -> Result<Value<'_>> {
@@ -22,6 +19,22 @@ impl SnmpClient {
             SnmpClient::V2c(client) => client.get(oid).await,
             SnmpClient::V3(client) => client.get(oid).await,
         }
+    }
+
+    pub async fn walk(&mut self, root_oid: &Oid<'_>) -> Result<Vec<(Oid<'static>, String)>> {
+        match self {
+            SnmpClient::V2c(client) => client.walk(root_oid).await,
+            SnmpClient::V3(client) => client.walk(root_oid).await,
+        }
+    }
+
+    pub async fn walk_limited(
+        &mut self,
+        root_oid: &Oid<'_>,
+        max_items: usize,
+    ) -> Result<Vec<(Oid<'static>, String)>> {
+        let all_items = self.walk(root_oid).await?;
+        Ok(all_items.into_iter().take(max_items).collect())
     }
 }
 
