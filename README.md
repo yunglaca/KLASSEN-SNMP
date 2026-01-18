@@ -104,4 +104,4 @@ TBD
 
 ## 👤 Автор
 
-@laca 👻
+[@laca](https://github.com/yunglaca) 👻
