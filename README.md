@@ -102,6 +102,6 @@ tables:
 
 TBD
 
-## 👤 Автор
+## Автор
 
-[@laca](https://github.com/yunglaca) 👻
+[@Nikita Klassen](https://github.com/yunglaca) 👻
