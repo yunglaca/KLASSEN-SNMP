@@ -15,7 +15,6 @@ use formatter::JsonFormatter;
 // - Статистика по типам устройств
 // - Экспорт метрик maybeee
 
-
 #[tokio::main]
 async fn main() -> Result<()> {
     // TODO исправить баг с тем, что если нет устройств с кем общаться, то билд зависает
@@ -25,35 +24,31 @@ async fn main() -> Result<()> {
     // Результаты для JSON вывода
     let mut results = Vec::new();
 
-    // Пробуем SNMPv3
-    match create_snmpv3_client(&config, &target).await {
-        Ok(client) => match SnmpCollector::collect_all(client, &config, "SNMPv3").await {
+    // match create_snmpv3_client(&config, &target).await {
+    //     Ok(client) => match SnmpCollector::collect_all(client, &config, "SNMPv3").await {
+    //         Ok(result) => {
+    //             results.push(result);
+    //         }
+    //         Err(e) => {
+    //             eprintln!("SNMPv3 сбор данных не удался: {}", e);
+    //         }
+    //     },
+    //     Err(_) => {
+    //         eprintln!("SNMPv3 клиент недоступен");
+    //     }
+    // }
+
+    match create_snmpv2c_client(&config, &target).await {
+        Ok(client) => match SnmpCollector::collect_all(client, &config, "SNMPv2c").await {
             Ok(result) => {
                 results.push(result);
             }
-            Err(e) => {
-                eprintln!("SNMPv3 сбор данных не удался: {}", e);
+            Err(_) => {
+                eprintln!("SNMPv2c недоступен");
             }
         },
         Err(_) => {
-            eprintln!("SNMPv3 клиент недоступен");
-        }
-    }
-
-    // Пробуем SNMPv2c (только если SNMPv3 не сработал)
-    if results.is_empty() {
-        match create_snmpv2c_client(&config, &target).await {
-            Ok(client) => match SnmpCollector::collect_all(client, &config, "SNMPv2c").await {
-                Ok(result) => {
-                    results.push(result);
-                }
-                Err(_) => {
-                    eprintln!("SNMPv2c также недоступен");
-                }
-            },
-            Err(_) => {
-                eprintln!("Все SNMP версии недоступны");
-            }
+            eprintln!("snmp недоступен");
         }
     }
 
