@@ -89,13 +89,18 @@ impl JsonFormatter {
         let timestamp = chrono::Utc::now().to_rfc3339();
 
         let successful_scalars = result.scalars.iter().filter(|s| s.error.is_none()).count();
-        let successful_tables = result.tables.iter().filter(|t| t.error.is_none()).count();
-        let total_rows: usize = result.tables.iter().map(|t| t.rows.len()).sum();
+        let (successful_tables, total_rows) = match &result.tables {
+            Some(tables) => (
+                tables.iter().filter(|t| t.error.is_none()).count(),
+                tables.iter().map(|t| t.rows.len()).sum()
+            ),
+            None => (0, 0)
+        };
 
         let summary = ResultSummary {
             total_scalars: result.scalars.len(),
             successful_scalars,
-            total_tables: result.tables.len(),
+            total_tables: result.tables.as_ref().map(|t| t.len()).unwrap_or(0),
             successful_tables,
             total_rows,
         };
@@ -106,11 +111,13 @@ impl JsonFormatter {
             .map(|s| Self::format_scalar(s))
             .collect();
 
-        let tables = result
-            .tables
-            .iter()
-            .map(|t| Self::format_table(t))
-            .collect();
+        let tables = match &result.tables {
+            Some(tables) => tables
+                .iter()
+                .map(|t| Self::format_table(t))
+                .collect(),
+            None => Vec::new(),
+        };
 
         let errors = Self::extract_errors(result);
 
@@ -285,13 +292,15 @@ impl JsonFormatter {
         }
 
         // Ошибки таблиц
-        for table in &result.tables {
-            if let Some(ref error) = table.error {
-                errors.push(ErrorInfo {
-                    item_type: "table".to_string(),
-                    item_name: table.name.clone(),
-                    error_message: error.clone(),
-                });
+        if let Some(tables) = &result.tables {
+            for table in tables {
+                if let Some(ref error) = table.error {
+                    errors.push(ErrorInfo {
+                        item_type: "table".to_string(),
+                        item_name: table.name.clone(),
+                        error_message: error.clone(),
+                    });
+                }
             }
         }
 

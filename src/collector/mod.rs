@@ -29,7 +29,12 @@ impl SnmpCollector {
 
         let scalars = ScalarCollector::collect_scalars(&mut client, config).await;
 
-        let tables = TableCollector::collect_tables(&mut client, config).await;
+        // Условный сбор таблиц
+        let tables = if config.settings.should_collect_tables() {
+            Some(TableCollector::collect_tables(&mut client, config).await)
+        } else {
+            None
+        };
 
         Ok(MonitoringResult {
             client_type: client_type.to_string(),

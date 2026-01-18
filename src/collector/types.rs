@@ -22,5 +22,5 @@ pub struct TableResult {
 pub struct MonitoringResult {
     pub client_type: String,
     pub scalars: Vec<ScalarResult>,
-    pub tables: Vec<TableResult>,
+    pub tables: Option<Vec<TableResult>>,
 }

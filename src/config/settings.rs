@@ -8,6 +8,8 @@ pub struct Settings {
     pub connection: ConnectionSettings,
     /// Настройки аутентификации
     pub auth: AuthSettings,
+    /// Настройки сбора данных
+    pub collection: CollectionSettings,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,6 +44,20 @@ pub struct SnmpV3Settings {
     pub privacy_password: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CollectionSettings {
+    /// Собирать ли табличные данные (по умолчанию false)
+    pub collect_tables: bool,
+}
+
+impl Default for CollectionSettings {
+    fn default() -> Self {
+        Self {
+            collect_tables: false,
+        }
+    }
+}
+
 impl Default for Settings {
     fn default() -> Self {
         Self {
@@ -59,6 +75,7 @@ impl Default for Settings {
                     privacy_password: "myprivpass".to_string(),
                 },
             },
+            collection: CollectionSettings::default(),
         }
     }
 }
@@ -72,5 +89,10 @@ impl Settings {
     /// Получает протокол шифрования (всегда AES128)
     pub fn get_privacy_protocol(&self) -> Cipher {
         Cipher::Aes128
+    }
+
+    /// Проверяет, нужно ли собирать табличные данные
+    pub fn should_collect_tables(&self) -> bool {
+        self.collection.collect_tables
     }
 }
