@@ -18,7 +18,7 @@ use formatter::JsonFormatter;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Загружаем конфигурацию без лишних сообщений
+    // TODO исправить баг с тем, что если нет устройств с кем общаться, то билд зависает
     let config = config::AppConfig::load("./profiles/generic-endpoint.yaml")?;
     let target = config.get_target();
 
