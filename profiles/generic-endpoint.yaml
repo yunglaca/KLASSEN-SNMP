@@ -1,24 +1,27 @@
-# Простой профиль для устройств
-name: "сетевое устройство"
-description: "Базовый профиль"
 
-# Аутентификация и версия
-auth:
-  v2c:
-    community: "public"
-  v3:
-    username: "myuser"
-    auth_password: "myauthpass"
-    privacy_password: "myprivpass"
+# Deprecated будем через rest передавать данные
+# # Простой профиль для устройств
+# name: "сетевое устройство"
+# description: "Базовый профиль"
 
-# Скалярные значения для сбора
+# # Аутентификация и версия
+# auth:
+#   v2c:
+#     community: "public"
+#   v3:
+#     username: "myuser"
+#     auth_password: "myauthpass"
+#     privacy_password: "myprivpass"
+
+# Скалярные значения для сбора оставляем
 scalars:
+  sysObjectID: "1.3.6.1.2.1.1.2.0" # Идентификатор объекта системы
   sysDescr: "1.3.6.1.2.1.1.1.0" # Описание системы
   sysName: "1.3.6.1.2.1.1.5.0" # Имя системы
   sysUpTime: "1.3.6.1.2.1.1.3.0" # Время работы
   sysLocation: "1.3.6.1.2.1.1.6.0" # Местоположение
 
-# Таблицы для обхода
+# Таблицы для обхода по умолчанию выключены
 tables:
   ifTable: "1.3.6.1.2.1.2.2" # Таблица интерфейсов
   hrStorageTable: "1.3.6.1.2.1.25.2.3" # Таблица хранилищ
